@@ -3,9 +3,15 @@ import os
 import requests
 
 import click
+import yaml
 from awscost.cost_explorer import CostExplorer
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+
+
+def config_to_dict(config):
+    with open(config) as fd:
+        return yaml.safe_load(fd)
 
 
 def send_slack_message(message, webhook_url):
@@ -41,11 +47,25 @@ def send_slack_message(message, webhook_url):
     help="Slack webhook url",
     show_default=True,
 )
-def main(months, aws_profiles, slack_webhook_url):
+@click.option(
+    "--config",
+    type=click.Path(exists=True),
+    default=os.environ.get("AWS_COST_REPORT_CONFIG_FILE"),
+    help="AWS cost report config file",
+)
+def main(months, aws_profiles, slack_webhook_url, config):
+    config_dict = config_to_dict(config=config) if config else {}
+    months = config_dict.get("months", months)
+    aws_profiles = config_dict.get("aws-profiles", aws_profiles)
+    slack_webhook_url = config_dict.get("slack-webhook-url", slack_webhook_url)
+    aws_profiles = (
+        aws_profiles if isinstance(aws_profiles, list) else aws_profiles.split(",")
+    )
+
     start = (datetime.today() - relativedelta(months=months)).strftime("%Y-%m-01")
     end = datetime.today().strftime("%Y-%m-01")
 
-    for aws_profile in aws_profiles.split(","):
+    for aws_profile in aws_profiles:
         _aws_profile = os.environ["AWS_PROFILE"] = (
             aws_profile if aws_profile else "default"
         )
