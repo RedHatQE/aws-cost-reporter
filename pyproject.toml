@@ -1,19 +1,21 @@
 [tool.poetry]
-name = "aws-cost-slack-reporter"
+name = "aws-cost-reporter"
 version = "0.1.0"
 description = "Report WAS costs to slack"
 authors = ["Meni Yakove <myakove@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 
-packages = [{include = "app"}]
+packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-awscost = "^0.3.1"
 setuptools = "^69.0.3"
 click = "^8.1.7"
 requests = "*"
+boto3 = "^1.34.74"
+flask = "^3.0.2"
+pyaml-env = "^1.2.1"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.13"

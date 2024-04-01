@@ -1,22 +1,19 @@
 import json
-import os
-import requests
-
-import click
-import yaml
-from awscost.cost_explorer import CostExplorer
-from dateutil.relativedelta import relativedelta
 from datetime import datetime
+import os
+import boto3
+import requests
+from botocore.client import ClientError
+from dateutil.relativedelta import relativedelta
+from flask import Flask
+from pyaml_env import parse_config
 
-
-def config_to_dict(config):
-    with open(config) as fd:
-        return yaml.safe_load(fd)
+FLASK_APP = Flask("AWS Cost Reporter")
 
 
 def send_slack_message(message, webhook_url):
     slack_data = {"text": message}
-    click.echo(f"Sending message to slack: {message}")
+    print(f"Sending message to slack: {message}")
     response = requests.post(
         webhook_url,
         data=json.dumps(slack_data),
@@ -28,63 +25,83 @@ def send_slack_message(message, webhook_url):
         )
 
 
-@click.command("aws-reporter")
-@click.option(
-    "-m",
-    "--months",
-    default=1,
-    show_default=True,
-    help="Number of months to report",
-)
-@click.option(
-    "--aws-profiles",
-    default="",
-    help="comma separated strings of AWS profiles to generate cost report",
-)
-@click.option(
-    "--slack-webhook-url",
-    default=os.environ.get("SLACK_WEBHOOK_URL"),
-    help="Slack webhook url",
-    show_default=True,
-)
-@click.option(
-    "--config",
-    type=click.Path(exists=True),
-    default=os.environ.get("AWS_COST_REPORT_CONFIG_FILE"),
-    help="AWS cost report config file",
-)
-def main(months, aws_profiles, slack_webhook_url, config):
-    config_dict = config_to_dict(config=config) if config else {}
-    months = config_dict.get("months", months)
-    aws_profiles = config_dict.get("aws-profiles", aws_profiles)
-    slack_webhook_url = config_dict.get("slack-webhook-url", slack_webhook_url)
-    aws_profiles = (
-        aws_profiles if isinstance(aws_profiles, list) else aws_profiles.split(",")
-    )
+@FLASK_APP.route("/")
+def reporter():
+    total_cost = {}
+    accounts = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
+    slack_webhook_url = None
 
-    start = (datetime.today() - relativedelta(months=months)).strftime("%Y-%m-01")
+    start = (datetime.today() - relativedelta(months=1)).strftime("%Y-%m-01")
     end = datetime.today().strftime("%Y-%m-01")
 
-    for aws_profile in aws_profiles:
-        cost_explorer = CostExplorer(
-            granularity="MONTHLY",
-            start=start,
-            end=end,
-            dimensions=["SERVICE"],
-            metrics="UnblendedCost",
-            threshold=1.0,
-            aws_profile=aws_profile,
+    for account, data in accounts.items():
+        access_key_id = data["access_key_id"]
+        secret_access_key = data["secret_access_key"]
+        client = boto3.client(
+            "ce",
+            "us-east-1",
+            aws_access_key_id=access_key_id,
+            aws_secret_access_key=secret_access_key,
         )
-        total_cost = cost_explorer.get_cost_and_usage_total()
-        msg = f"Profile {aws_profile}:\n\t"
-        for values in total_cost.values():
-            for month, total in values.items():
-                msg += f"Date: {month}: {total}$\n\t"
 
-        click.echo(msg)
+        try:
+            cost = client.get_cost_and_usage(
+                TimePeriod={"Start": start, "End": end},
+                Granularity="MONTHLY",
+                Metrics=["AmortizedCost"],
+            )
+        except ClientError as exp:
+            print(f"Failed to get cost for {account}: {exp}")
+            continue
 
-        if slack_webhook_url:
-            send_slack_message(message=msg, webhook_url=slack_webhook_url)
+        _total_data = cost["ResultsByTime"][0]["Total"]["AmortizedCost"]
+        _total_cost = _total_data["Amount"]
+        _total_unit = _total_data["Unit"]
+        total_cost[account] = (
+            f"{float(_total_cost): .2f}{'$' if _total_unit == 'USD' else _total_unit}"
+        )
+
+    if slack_webhook_url:
+        send_slack_message(message=total_cost, webhook_url=slack_webhook_url)
+
+    html = ""
+    html = """
+<!DOCTYPE html>
+<html>
+<style>
+table, th, td {
+  border:1px solid black;
+}
+</style>
+<body>
+<h2>AWS Cost Report</h2>
+
+<table style="width:50%">
+  <tr>
+    <th>Account</th>
+    <th>Cost</th>
+  </tr>
+"""
+    # Make table in HTML with total cost for each account
+    for account, cost in total_cost.items():
+        html += f"<tr><td>{account}</td><td>{cost}</td></tr>"
+
+    html += """
+</table>
+</body>
+</html>
+"""
+
+    return html
+
+
+def main():
+    FLASK_APP.logger.info(f"Starting {FLASK_APP.name} app")
+    FLASK_APP.run(
+        port=5000,
+        host="0.0.0.0",
+        use_reloader=False,
+    )
 
 
 if __name__ == "__main__":
