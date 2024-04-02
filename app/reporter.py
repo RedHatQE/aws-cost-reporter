@@ -6,6 +6,7 @@ import requests
 from botocore.client import ClientError
 from flask import Flask
 from pyaml_env import parse_config
+import calendar
 
 FLASK_APP = Flask("AWS Cost Reporter")
 
@@ -26,16 +27,24 @@ def send_slack_message(message, webhook_url):
 
 @FLASK_APP.route("/")
 def reporter():
+    msg = ""
     total_cost = {}
     config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
     slack_webhook_url = config_data.get("slack-webhook-url")
     app_extrenal_url = config_data.get("app-external-url")
 
-    today = datetime.today()
-    start = datetime(today.year, today.month, 1).strftime("%Y-%m-01")
-    end = datetime.today().strftime("%Y-%m-%d")
+    _today = datetime.today()
+    this_month_start = datetime(_today.year, _today.month, 1).strftime("%Y-%m-%d")
+    this_month_end = datetime.today().strftime("%Y-%m-%d")
+
+    _last_month = _today.month - 1
+    last_month_start = datetime(_today.year, _last_month, 1).strftime("%Y-%m-%d")
+    last_month_end = datetime(
+        _today.year, _last_month, calendar.monthrange(_today.year, _last_month)[1]
+    ).strftime("%Y-%m-%d")
 
     for account, data in config_data["accounts"].items():
+        total_cost[account] = {}
         access_key_id = data["access_key_id"]
         secret_access_key = data["secret_access_key"]
         client = boto3.client(
@@ -46,8 +55,13 @@ def reporter():
         )
 
         try:
-            cost = client.get_cost_and_usage(
-                TimePeriod={"Start": start, "End": end},
+            this_month_cost = client.get_cost_and_usage(
+                TimePeriod={"Start": this_month_start, "End": this_month_end},
+                Granularity="MONTHLY",
+                Metrics=["AmortizedCost"],
+            )
+            last_month_cost = client.get_cost_and_usage(
+                TimePeriod={"Start": last_month_start, "End": last_month_end},
                 Granularity="MONTHLY",
                 Metrics=["AmortizedCost"],
             )
@@ -55,46 +69,35 @@ def reporter():
             print(f"Failed to get cost for {account}: {exp}")
             continue
 
-        _total_data = cost["ResultsByTime"][0]["Total"]["AmortizedCost"]
-        _total_cost = _total_data["Amount"] or 0
-        _total_unit = _total_data["Unit"]
-        total_cost[account] = (
-            f"{float(_total_cost): .2f}{'$' if _total_unit == 'USD' else _total_unit}"
+        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"][
+            "AmortizedCost"
+        ]
+        _this_month_total_cost = _this_month_total_cost_data["Amount"]
+
+        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"][
+            "AmortizedCost"
+        ]
+        _last_month_total_cost = _last_month_total_cost_data["Amount"]
+
+        _total_unit = _this_month_total_cost_data["Unit"]
+        _unit_symbol = "$" if _total_unit == "USD" else _total_unit
+        total_cost[account][f"{this_month_start}/{this_month_end}"] = (
+            f"{float(_this_month_total_cost): .2f}{_unit_symbol}"
+        )
+        total_cost[account][f"{last_month_start}/{last_month_end}"] = (
+            f"{float(_last_month_total_cost): .2f}{_unit_symbol}"
+        )
+        msg += (
+            f"{account}:\n"
+            f"\t[{this_month_start}/{this_month_end}] {float(_this_month_total_cost): .2f}{_unit_symbol}\n"
+            f"\t[{last_month_start}/{last_month_end}]{float(_last_month_total_cost): .2f}{_unit_symbol}"
         )
 
     if slack_webhook_url:
-        slack_msg = f"{app_extrenal_url}\n{total_cost}"
+        slack_msg = f"{app_extrenal_url}\n{msg}"
         send_slack_message(message=slack_msg, webhook_url=slack_webhook_url)
 
-    html = ""
-    html = """
-<!DOCTYPE html>
-<html>
-<style>
-table, th, td {
-  border:1px solid black;
-}
-</style>
-<body>
-<h2>AWS Cost Report</h2>
-
-<table style="width:50%">
-  <tr>
-    <th>Account</th>
-    <th>Cost</th>
-  </tr>
-"""
-    # Make table in HTML with total cost for each account
-    for account, cost in total_cost.items():
-        html += f"<tr><td>{account}</td><td>{cost}</td></tr>"
-
-    html += """
-</table>
-</body>
-</html>
-"""
-
-    return html
+    return msg
 
 
 def main():
