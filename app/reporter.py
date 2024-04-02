@@ -4,7 +4,6 @@ import os
 import boto3
 import requests
 from botocore.client import ClientError
-from dateutil.relativedelta import relativedelta
 from flask import Flask
 from pyaml_env import parse_config
 
@@ -28,13 +27,15 @@ def send_slack_message(message, webhook_url):
 @FLASK_APP.route("/")
 def reporter():
     total_cost = {}
-    accounts = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
-    slack_webhook_url = None
+    config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
+    slack_webhook_url = config_data.get("slack-webhook-url")
+    app_extrenal_url = config_data.get("app-external-url")
 
-    start = (datetime.today() - relativedelta(months=1)).strftime("%Y-%m-01")
-    end = datetime.today().strftime("%Y-%m-01")
+    today = datetime.today()
+    start = datetime(today.year, today.month, 1).strftime("%Y-%m-01")
+    end = datetime.today().strftime("%Y-%m-%d")
 
-    for account, data in accounts.items():
+    for account, data in config_data["accounts"].items():
         access_key_id = data["access_key_id"]
         secret_access_key = data["secret_access_key"]
         client = boto3.client(
@@ -55,14 +56,15 @@ def reporter():
             continue
 
         _total_data = cost["ResultsByTime"][0]["Total"]["AmortizedCost"]
-        _total_cost = _total_data["Amount"]
+        _total_cost = _total_data["Amount"] or 0
         _total_unit = _total_data["Unit"]
         total_cost[account] = (
             f"{float(_total_cost): .2f}{'$' if _total_unit == 'USD' else _total_unit}"
         )
 
     if slack_webhook_url:
-        send_slack_message(message=total_cost, webhook_url=slack_webhook_url)
+        slack_msg = f"{app_extrenal_url}\n{total_cost}"
+        send_slack_message(message=slack_msg, webhook_url=slack_webhook_url)
 
     html = ""
     html = """
@@ -100,7 +102,7 @@ def main():
     FLASK_APP.run(
         port=5000,
         host="0.0.0.0",
-        use_reloader=False,
+        use_reloader=True,
     )
 
 
