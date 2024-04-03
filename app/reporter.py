@@ -116,7 +116,7 @@ To force update send run curl {app_extrenal_url}
     return msg
 
 
-def run_in_background(cron, config_data):
+def run_in_background(cron):
     FLASK_APP.logger.info("Starting cost reporter in background")
     while True:
         now = datetime.datetime.now()
@@ -125,6 +125,7 @@ def run_in_background(cron, config_data):
         if delta.total_seconds() > 0:
             time.sleep(delta.total_seconds())
             try:
+                FLASK_APP.logger.info("Running scheduled cost reporter")
                 update_cost_reporter()
             except Exception as exp:
                 FLASK_APP.logger.info(f"Failed to update cost reporter: {exp}")
@@ -132,6 +133,7 @@ def run_in_background(cron, config_data):
 
 @FLASK_APP.route("/update")
 def webhook_update():
+    FLASK_APP.logger.info("Updating cost reporter from webhook")
     return update_cost_reporter()
 
 
@@ -139,9 +141,7 @@ def main():
     config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
     if cron := config_data.get("cron"):
         cron = croniter.croniter(cron, datetime.datetime.now())
-        proc = Process(
-            target=run_in_background, kwargs={"cron": cron, "config_data": config_data}
-        )
+        proc = Process(target=run_in_background, kwargs={"cron": cron})
         proc.start()
 
     FLASK_APP.logger.info(f"Starting {FLASK_APP.name} app")
