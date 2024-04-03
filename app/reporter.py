@@ -28,7 +28,7 @@ def send_slack_message(message, webhook_url):
         headers={"Content-Type": "application/json"},
     )
     if response.status_code != 200:
-        raise ValueError(
+        FLASK_APP.logger.error(
             f"Request to slack returned an error {response.status_code} with the following message: {response.text}"
         )
 
