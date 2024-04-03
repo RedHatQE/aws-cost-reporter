@@ -33,12 +33,10 @@ def send_slack_message(message, webhook_url):
         )
 
 
-def update_cost_reporter(config_data=None):
+def update_cost_reporter():
     msg = ""
     total_cost = {}
-    config_data = config_data or parse_config(
-        os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml")
-    )
+    config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
     slack_webhook_url = config_data.get("slack-webhook-url")
     app_extrenal_url = config_data.get("app-external-url")
 
@@ -127,7 +125,7 @@ def run_in_background(cron, config_data):
         if delta.total_seconds() > 0:
             time.sleep(delta.total_seconds())
             try:
-                update_cost_reporter(config_data=config_data)
+                update_cost_reporter()
             except Exception as exp:
                 FLASK_APP.logger.info(f"Failed to update cost reporter: {exp}")
 
