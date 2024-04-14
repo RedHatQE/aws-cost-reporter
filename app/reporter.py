@@ -1,8 +1,6 @@
-import json
 import datetime
 import os
 import boto3
-import requests
 from botocore.client import ClientError
 from flask import Flask
 from flask.logging import default_handler
@@ -12,25 +10,12 @@ import croniter
 from simple_logger.logger import get_logger
 from multiprocessing import Process
 import time
+from pyhelper_utils.notifications import send_slack_message
 
 
 FLASK_APP = Flask("AWS Cost Reporter")
 FLASK_APP.logger.removeHandler(default_handler)
 FLASK_APP.logger.addHandler(get_logger(FLASK_APP.logger.name).handlers[0])
-
-
-def send_slack_message(message, webhook_url):
-    slack_data = {"text": message}
-    FLASK_APP.logger.info(f"Sending message to slack: {message}")
-    response = requests.post(
-        webhook_url,
-        data=json.dumps(slack_data),
-        headers={"Content-Type": "application/json"},
-    )
-    if response.status_code != 200:
-        FLASK_APP.logger.error(
-            f"Request to slack returned an error {response.status_code} with the following message: {response.text}"
-        )
 
 
 def update_cost_reporter():
@@ -103,7 +88,12 @@ To force update send run curl {app_extrenal_url}
 ```
 """
         FLASK_APP.logger.info(f"Sending message to slack: {slack_msg}")
-        send_slack_message(message=slack_msg, webhook_url=slack_webhook_url)
+        send_slack_message(
+            message=slack_msg,
+            webhook_url=slack_webhook_url,
+            logger=FLASK_APP.logger,
+            raise_on_error=False,
+        )
 
     return msg
 
