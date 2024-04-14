@@ -63,7 +63,7 @@ def update_cost_reporter() -> str:
                 Metrics=["NetUnblendedCost"],
             )
         except ClientError as exp:
-            FLASK_APP.logger.info(f"Failed to get cost for {account}: {exp}")
+            FLASK_APP.logger.error(f"Failed to get cost for {account}: {exp}")
             continue
 
         _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"][

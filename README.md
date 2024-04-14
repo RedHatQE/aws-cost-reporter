@@ -20,8 +20,16 @@ docker run --rm aws-cost-slack-reporter
 accounts YAML file with AWS credentials:
 
 ```yaml
-account-name:
-  secret_access_key: "Secret Access Key" # pragma: allowlist secret
-  access_key_id: "Access Key ID" # pragma: allowlist secret
+accounts:
+  account-name:
+    secret_access_key: "Secret Access Key" # pragma: allowlist secret
+    access_key_id: "Access Key ID" # pragma: allowlist secret
 ```
 export AWS_COST_REPORTER_CONFIG="path to accounts YAML file"
+
+## Tests
+Run slack reporting tests:
+
+```bash
+poetry run pytest -m slack_report
+```
