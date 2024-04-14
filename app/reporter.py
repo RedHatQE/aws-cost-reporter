@@ -41,15 +41,11 @@ def update_cost_reporter():
     app_extrenal_url = config_data.get("app-external-url")
 
     _today = datetime.datetime.today()
-    this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime(
-        "%Y-%m-%d"
-    )
+    this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime("%Y-%m-%d")
     this_month_end = datetime.datetime.today().strftime("%Y-%m-%d")
 
     _last_month = _today.month - 1
-    last_month_start = datetime.datetime(_today.year, _last_month, 1).strftime(
-        "%Y-%m-%d"
-    )
+    last_month_start = datetime.datetime(_today.year, _last_month, 1).strftime("%Y-%m-%d")
     last_month_end = datetime.datetime(
         _today.year, _last_month, calendar.monthrange(_today.year, _last_month)[1]
     ).strftime("%Y-%m-%d")
@@ -69,25 +65,21 @@ def update_cost_reporter():
             this_month_cost = client.get_cost_and_usage(
                 TimePeriod={"Start": this_month_start, "End": this_month_end},
                 Granularity="MONTHLY",
-                Metrics=["AmortizedCost"],
+                Metrics=["NetUnblendedCost"],
             )
             last_month_cost = client.get_cost_and_usage(
                 TimePeriod={"Start": last_month_start, "End": last_month_end},
                 Granularity="MONTHLY",
-                Metrics=["AmortizedCost"],
+                Metrics=["NetUnblendedCost"],
             )
         except ClientError as exp:
             FLASK_APP.logger.info(f"Failed to get cost for {account}: {exp}")
             continue
 
-        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"][
-            "AmortizedCost"
-        ]
+        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"]["NetUnblendedCost"]
         _this_month_total_cost = _this_month_total_cost_data["Amount"]
 
-        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"][
-            "AmortizedCost"
-        ]
+        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"]["NetUnblendedCost"]
         _last_month_total_cost = _last_month_total_cost_data["Amount"]
 
         _total_unit = _this_month_total_cost_data["Unit"]
