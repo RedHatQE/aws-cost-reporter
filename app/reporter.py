@@ -1,5 +1,6 @@
 import datetime
 import os
+from typing import Dict
 import boto3
 from botocore.client import ClientError
 from flask import Flask
@@ -18,23 +19,19 @@ FLASK_APP.logger.removeHandler(default_handler)
 FLASK_APP.logger.addHandler(get_logger(FLASK_APP.logger.name).handlers[0])
 
 
-def update_cost_reporter():
-    msg = ""
-    total_cost = {}
+def update_cost_reporter() -> str:
+    msg: str = ""
+    total_cost: Dict = {}
     config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
-    slack_webhook_url = config_data.get("slack-webhook-url")
-    app_extrenal_url = config_data.get("app-external-url")
+    slack_webhook_url: str = config_data.get("slack-webhook-url")
+    app_extrenal_url: str = config_data.get("app-external-url")
 
     _today = datetime.datetime.today()
-    this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime(
-        "%Y-%m-%d"
-    )
+    this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime("%Y-%m-%d")
     this_month_end = datetime.datetime.today().strftime("%Y-%m-%d")
 
     _last_month = _today.month - 1
-    last_month_start = datetime.datetime(_today.year, _last_month, 1).strftime(
-        "%Y-%m-%d"
-    )
+    last_month_start = datetime.datetime(_today.year, _last_month, 1).strftime("%Y-%m-%d")
     last_month_end = datetime.datetime(
         _today.year, _last_month, calendar.monthrange(_today.year, _last_month)[1]
     ).strftime("%Y-%m-%d")
@@ -65,14 +62,10 @@ def update_cost_reporter():
             FLASK_APP.logger.info(f"Failed to get cost for {account}: {exp}")
             continue
 
-        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"][
-            "NetUnblendedCost"
-        ]
+        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"]["NetUnblendedCost"]
         _this_month_total_cost = _this_month_total_cost_data["Amount"]
 
-        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"][
-            "NetUnblendedCost"
-        ]
+        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"]["NetUnblendedCost"]
         _last_month_total_cost = _last_month_total_cost_data["Amount"]
 
         _total_unit = _this_month_total_cost_data["Unit"]
@@ -106,7 +99,7 @@ To force update send run curl {app_extrenal_url}
     return msg
 
 
-def run_in_background(cron):
+def run_in_background(cron: croniter.croniter) -> None:
     FLASK_APP.logger.info("Starting cost reporter in background")
     while True:
         now = datetime.datetime.now()
@@ -122,12 +115,12 @@ def run_in_background(cron):
 
 
 @FLASK_APP.route("/update")
-def webhook_update():
+def webhook_update() -> str:
     FLASK_APP.logger.info("Updating cost reporter from webhook")
     return update_cost_reporter()
 
 
-def main():
+def main() -> None:
     config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
     if cron := config_data.get("cron"):
         cron = croniter.croniter(cron, datetime.datetime.now())
