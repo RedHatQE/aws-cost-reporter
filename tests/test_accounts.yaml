@@ -1,0 +1,4 @@
+accounts:
+  test-account:
+    secret_access_key: "test-secret-access-key" # pragma: allowlist secret
+    access_key_id: "test-access-key-id"
