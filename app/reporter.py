@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import Dict
+from typing import Dict, Tuple
 import boto3
 from botocore.client import ClientError
 from flask import Flask
@@ -19,13 +19,7 @@ FLASK_APP.logger.removeHandler(default_handler)
 FLASK_APP.logger.addHandler(get_logger(FLASK_APP.logger.name).handlers[0])
 
 
-def update_cost_reporter() -> str:
-    msg: str = ""
-    total_cost: Dict = {}
-    config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
-    slack_webhook_url: str = config_data.get("slack-webhook-url")
-    app_extrenal_url: str = config_data.get("app-external-url")
-
+def get_current_and_previous_months_dates() -> Tuple[str, str, str, str]:
     _today = datetime.datetime.today()
     this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime(
         "%Y-%m-%d"
@@ -39,6 +33,18 @@ def update_cost_reporter() -> str:
     last_month_end = datetime.datetime(
         _today.year, _last_month, calendar.monthrange(_today.year, _last_month)[1]
     ).strftime("%Y-%m-%d")
+
+    return this_month_start, this_month_end, last_month_start, last_month_end
+
+
+def update_cost_reporter() -> str:
+    msg: str = ""
+    total_cost: Dict = {}
+    config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
+    slack_webhook_url: str = config_data.get("slack-webhook-url")
+    app_extrenal_url: str = config_data.get("app-external-url")
+
+    this_month_start, this_month_end, last_month_start, last_month_end = get_current_and_previous_months_dates()
 
     for account, data in config_data["accounts"].items():
         total_cost[account] = {}
@@ -86,7 +92,7 @@ def update_cost_reporter() -> str:
         )
         msg += (
             f"{account}:\n"
-            f"\t[{this_month_start}/{this_month_end}] {float(_this_month_total_cost): .2f}{_unit_symbol}\n"
+            f"\t[{this_month_start}/{this_month_end}]{float(_this_month_total_cost): .2f}{_unit_symbol}\n"
             f"\t[{last_month_start}/{last_month_end}]{float(_last_month_total_cost): .2f}{_unit_symbol}\n"
         )
 
