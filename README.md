@@ -28,8 +28,8 @@ accounts:
 export AWS_COST_REPORTER_CONFIG="path to accounts YAML file"
 
 ## Tests
-Run slack reporting tests:
+Run AWS costs reporting tests:
 
 ```bash
-poetry run pytest -m slack_report
+poetry run pytest tests
 ```

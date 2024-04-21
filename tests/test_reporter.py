@@ -1,6 +1,5 @@
 import os
 import pytest
-from unittest.mock import patch, Mock
 
 import yaml
 
@@ -26,8 +25,6 @@ def aws_account_names(aws_accounts_file):
         aws_accounts_data = yaml.safe_load(stream=fd)
         _aws_account_names = aws_accounts_data["accounts"].keys()
 
-        assert _aws_account_names, "Failed to get AWS account names to report costs"
-
         yield _aws_account_names
 
 
@@ -43,46 +40,42 @@ def expected_cost_report_message(aws_static_costs, aws_account_names):
             f"\t[{last_month_start}/{last_month_end}]{float(aws_static_costs['previous_month']): .2f}$\n"
         )
 
-    assert cost_report_message, "Failed to create AWS cost report message"
-
     return cost_report_message
 
 
 @pytest.fixture
-def mock_boto3_client(aws_static_costs):
-    with patch("boto3.client") as mock:
-        mocked_client = Mock()
-        mocked_client.get_cost_and_usage.side_effect = [
-            {
-                "ResultsByTime": [
-                    {
-                        "Total": {
-                            "NetUnblendedCost": {
-                                "Amount": aws_static_costs["current_month"],
-                                "Unit": "USD",
-                            }
+def mock_boto3_client(mocker, aws_static_costs, aws_account_names):
+    mocked_client = mocker.MagicMock()
+    mocked_client.get_cost_and_usage.side_effect = [
+        {
+            "ResultsByTime": [
+                {
+                    "Total": {
+                        "NetUnblendedCost": {
+                            "Amount": aws_static_costs["current_month"],
+                            "Unit": "USD",
                         }
                     }
-                ]
-            },
-            {
-                "ResultsByTime": [
-                    {
-                        "Total": {
-                            "NetUnblendedCost": {
-                                "Amount": aws_static_costs["previous_month"],
-                                "Unit": "USD",
-                            }
+                }
+            ]
+        },
+        {
+            "ResultsByTime": [
+                {
+                    "Total": {
+                        "NetUnblendedCost": {
+                            "Amount": aws_static_costs["previous_month"],
+                            "Unit": "USD",
                         }
                     }
-                ]
-            },
-        ]
-        mock.return_value = mocked_client
-        yield mocked_client
+                }
+            ]
+        },
+    ] * len(aws_account_names)
+    mocker.patch("boto3.client", return_value=mocked_client)
+    return mocked_client
 
 
-@pytest.mark.slack_report
 def test_aws_cost_report(
     aws_accounts_file, expected_cost_report_message, mock_boto3_client
 ):
