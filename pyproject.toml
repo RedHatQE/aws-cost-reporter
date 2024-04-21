@@ -18,10 +18,17 @@ flask = "^3.0.2"
 pyaml-env = "^1.2.1"
 croniter = "^2.0.3"
 python-simple-logger = "^1.0.19"
-pyhelper-utils = "^0.0.11"
+pyhelper-utils = "^0.0.8"
+pytest = "^8.1.1"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.13"
+
+
+[tool.poetry.group.tests.dependencies]
+pytest-mock = "^3.14.0"
+pytest = "^8.1.1"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
