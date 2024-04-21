@@ -39,8 +39,8 @@ def expected_cost_report_message(aws_static_costs, aws_account_names):
     cost_report_message = ""
     for aws_account_name in aws_account_names:
         cost_report_message += (
-            f"{aws_account_name}:\n\t[{this_month_start}/{this_month_end}]{float(aws_static_costs["current_month"]): .2f}$\n"
-            f"\t[{last_month_start}/{last_month_end}]{float(aws_static_costs["previous_month"]): .2f}$\n"
+            f"{aws_account_name}:\n\t[{this_month_start}/{this_month_end}]{float(aws_static_costs['current_month']): .2f}$\n"
+            f"\t[{last_month_start}/{last_month_end}]{float(aws_static_costs['previous_month']): .2f}$\n"
         )
 
     assert cost_report_message, "Failed to create AWS cost report message"
