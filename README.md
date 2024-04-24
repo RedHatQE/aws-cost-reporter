@@ -26,10 +26,3 @@ accounts:
     access_key_id: "Access Key ID" # pragma: allowlist secret
 ```
 export AWS_COST_REPORTER_CONFIG="path to accounts YAML file"
-
-## Tests
-Run AWS costs reporting tests:
-
-```bash
-poetry run pytest tests
-```
