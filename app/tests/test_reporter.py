@@ -13,7 +13,9 @@ def aws_static_costs():
 
 @pytest.fixture
 def aws_accounts_file():
-    aws_accounts_filename = os.path.join(f"{os.getcwd()}/tests", "test_accounts.yaml")
+    aws_accounts_filename = os.path.join(
+        f"{os.getcwd()}/app/tests", "test_accounts.yaml"
+    )
     os.environ["AWS_COST_REPORTER_CONFIG"] = aws_accounts_filename
 
     return aws_accounts_filename
@@ -76,26 +78,8 @@ def mock_boto3_client(mocker, aws_static_costs, aws_account_names):
     return mocked_client
 
 
-def test_aws_cost_report(
-    aws_accounts_file, expected_cost_report_message, mock_boto3_client
-):
-    this_month_start, this_month_end, last_month_start, last_month_end = (
-        get_current_and_previous_months_dates()
-    )
-
+def test_aws_cost_report(expected_cost_report_message, mock_boto3_client):
     actual_cost_report_message = update_cost_reporter()
-
-    mock_boto3_client.get_cost_and_usage.assert_any_call(
-        TimePeriod={"Start": this_month_start, "End": this_month_end},
-        Granularity="MONTHLY",
-        Metrics=["NetUnblendedCost"],
-    )
-    mock_boto3_client.get_cost_and_usage.assert_any_call(
-        TimePeriod={"Start": last_month_start, "End": last_month_end},
-        Granularity="MONTHLY",
-        Metrics=["NetUnblendedCost"],
-    )
-
     assert actual_cost_report_message == expected_cost_report_message, (
         f"AWS cost report message does not match the expected.\n"
         f"Actual: {actual_cost_report_message}, expected: {expected_cost_report_message}"

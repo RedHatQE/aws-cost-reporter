@@ -21,17 +21,18 @@ FLASK_APP.logger.addHandler(get_logger(FLASK_APP.logger.name).handlers[0])
 
 def get_current_and_previous_months_dates() -> Tuple[str, str, str, str]:
     _today = datetime.datetime.today()
-    this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime(
-        "%Y-%m-%d"
-    )
-    this_month_end = datetime.datetime.today().strftime("%Y-%m-%d")
+    this_month_start = _today.replace(day=1).strftime("%Y-%m-%d")
+    this_month_end = _today.strftime("%Y-%m-%d")
 
-    _last_month = _today.month - 1
-    last_month_start = datetime.datetime(_today.year, _last_month, 1).strftime(
+    _last_month = _today.month - 1 if _today.month > 1 else 12
+    last_month_year = _today.year if _today.month > 1 else _today.year - 1
+    last_month_start = datetime.datetime(last_month_year, _last_month, 1).strftime(
         "%Y-%m-%d"
     )
     last_month_end = datetime.datetime(
-        _today.year, _last_month, calendar.monthrange(_today.year, _last_month)[1]
+        last_month_year,
+        _last_month,
+        calendar.monthrange(last_month_year, _last_month)[1],
     ).strftime("%Y-%m-%d")
 
     return this_month_start, this_month_end, last_month_start, last_month_end
