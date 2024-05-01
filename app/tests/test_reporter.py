@@ -56,7 +56,6 @@ def mocked_boto3_client(
     aws_account_names: List[str],
 ) -> MagicMock:
     mocked_client = mocker.MagicMock()
-    print(type(mocked_client))
     mocked_client.get_cost_and_usage.side_effect = [
         {
             "ResultsByTime": [
