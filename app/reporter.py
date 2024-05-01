@@ -40,7 +40,7 @@ def get_current_and_previous_months_dates() -> Tuple[str, str, str, str]:
 
 def update_cost_reporter() -> str:
     msg: str = ""
-    total_cost: Dict = {}
+    total_cost: Dict[str, Dict[str, str]] = {}
     config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
     slack_webhook_url: str = config_data.get("slack-webhook-url")
     app_extrenal_url: str = config_data.get("app-external-url")
