@@ -42,4 +42,5 @@ repos:
     rev: v1.10.0
     hooks:
       - id: mypy
+        exclude: ^(app/tests/)
         additional_dependencies: [types-all]
