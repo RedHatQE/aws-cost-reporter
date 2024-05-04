@@ -1,0 +1,1 @@
+{"$schema": "https://docs.renovatebot.com/renovate-schema.json", "packageRules": [{"matchPackagePatterns": ["setuptools", "click", "requests", "boto3", "flask", "pyaml-env", "croniter", "python-simple-logger", "pyhelper-utils", "ipdb"], "groupName": "poetry-deps"}]}
