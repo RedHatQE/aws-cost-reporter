@@ -23,6 +23,32 @@ pyhelper-utils = "^0.0.15"
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.13"
 
+[tool.coverage.run]
+omit = [
+    "app/tests/*",
+]
+
+[tool.coverage.report]
+fail_under = 60
+skip_empty = true
+
+[tool.coverage.html]
+directory = ".tests_coverage"
+
+[tool.poetry.group.tests.dependencies]
+pytest-mock = "^3.14.0"
+pytest = "^8.1.1"
+pytest-cov = "^5.0.0"
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+warn_unused_ignores = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

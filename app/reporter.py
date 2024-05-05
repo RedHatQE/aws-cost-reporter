@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import Dict
+from typing import Dict, Tuple
 import boto3
 from botocore.client import ClientError
 from flask import Flask
@@ -19,26 +19,35 @@ FLASK_APP.logger.removeHandler(default_handler)
 FLASK_APP.logger.addHandler(get_logger(FLASK_APP.logger.name).handlers[0])
 
 
+def get_current_and_previous_months_dates() -> Tuple[str, str, str, str]:
+    _today = datetime.datetime.today()
+    this_month_start = _today.replace(day=1).strftime("%Y-%m-%d")
+    this_month_end = _today.strftime("%Y-%m-%d")
+
+    _last_month = _today.month - 1 if _today.month > 1 else 12
+    last_month_year = _today.year if _today.month > 1 else _today.year - 1
+    last_month_start = datetime.datetime(last_month_year, _last_month, 1).strftime(
+        "%Y-%m-%d"
+    )
+    last_month_end = datetime.datetime(
+        last_month_year,
+        _last_month,
+        calendar.monthrange(last_month_year, _last_month)[1],
+    ).strftime("%Y-%m-%d")
+
+    return this_month_start, this_month_end, last_month_start, last_month_end
+
+
 def update_cost_reporter() -> str:
     msg: str = ""
-    total_cost: Dict = {}
+    total_cost: Dict[str, Dict[str, str]] = {}
     config_data = parse_config(os.getenv("AWS_COST_REPORTER_CONFIG", "accounts.yaml"))
     slack_webhook_url: str = config_data.get("slack-webhook-url")
     app_extrenal_url: str = config_data.get("app-external-url")
 
-    _today = datetime.datetime.today()
-    this_month_start = datetime.datetime(_today.year, _today.month, 1).strftime(
-        "%Y-%m-%d"
+    this_month_start, this_month_end, last_month_start, last_month_end = (
+        get_current_and_previous_months_dates()
     )
-    this_month_end = datetime.datetime.today().strftime("%Y-%m-%d")
-
-    _last_month = _today.month - 1
-    last_month_start = datetime.datetime(_today.year, _last_month, 1).strftime(
-        "%Y-%m-%d"
-    )
-    last_month_end = datetime.datetime(
-        _today.year, _last_month, calendar.monthrange(_today.year, _last_month)[1]
-    ).strftime("%Y-%m-%d")
 
     for account, data in config_data["accounts"].items():
         total_cost[account] = {}
@@ -63,7 +72,7 @@ def update_cost_reporter() -> str:
                 Metrics=["NetUnblendedCost"],
             )
         except ClientError as exp:
-            FLASK_APP.logger.info(f"Failed to get cost for {account}: {exp}")
+            FLASK_APP.logger.error(f"Failed to get cost for {account}: {exp}")
             continue
 
         _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"][
@@ -86,7 +95,7 @@ def update_cost_reporter() -> str:
         )
         msg += (
             f"{account}:\n"
-            f"\t[{this_month_start}/{this_month_end}] {float(_this_month_total_cost): .2f}{_unit_symbol}\n"
+            f"\t[{this_month_start}/{this_month_end}]{float(_this_month_total_cost): .2f}{_unit_symbol}\n"
             f"\t[{last_month_start}/{last_month_end}]{float(_last_month_total_cost): .2f}{_unit_symbol}\n"
         )
 
