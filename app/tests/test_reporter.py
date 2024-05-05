@@ -20,12 +20,7 @@ def aws_accounts_file():
 
 @pytest.fixture
 def aws_account_names(aws_accounts_file):
-    return [
-        account_name
-        for account_name, account_data in parse_config(path=aws_accounts_file)[
-            "accounts"
-        ].items()
-    ]
+    return parse_config(path=aws_accounts_file)["accounts"].keys()
 
 
 @pytest.fixture
@@ -33,13 +28,13 @@ def expected_cost_report_message(aws_static_costs, aws_account_names):
     this_month_start, this_month_end, last_month_start, last_month_end = (
         get_current_and_previous_months_dates()
     )
-    return f"""{aws_account_names[0]}:
-\t[{this_month_start}/{this_month_end}]{float(aws_static_costs['current_month']): .2f}$
-\t[{last_month_start}/{last_month_end}]{float(aws_static_costs['previous_month']): .2f}$
-{aws_account_names[1]}:
-\t[{this_month_start}/{this_month_end}]{float(aws_static_costs['current_month']): .2f}$
-\t[{last_month_start}/{last_month_end}]{float(aws_static_costs['previous_month']): .2f}$
-"""
+    msg = ""
+    for aws_account_name in aws_account_names:
+        msg += f"{aws_account_name}:\n"
+        msg += f"\t[{this_month_start}/{this_month_end}]{float(aws_static_costs['current_month']): .2f}$\n"
+        msg += f"\t[{last_month_start}/{last_month_end}]{float(aws_static_costs['previous_month']): .2f}$\n"
+
+    return msg
 
 
 @pytest.fixture
