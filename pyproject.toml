@@ -24,9 +24,7 @@ pyhelper-utils = "^0.0.15"
 ipdb = "^0.13.13"
 
 [tool.coverage.run]
-omit = [
-    "app/tests/*",
-]
+omit = ["app/tests/*"]
 
 [tool.coverage.report]
 fail_under = 60
