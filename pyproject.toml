@@ -18,7 +18,7 @@ flask = "^3.0.2"
 pyaml-env = "^1.2.1"
 croniter = "^2.0.3"
 python-simple-logger = "^1.0.19"
-pyhelper-utils = "^0.0.17"
+pyhelper-utils = "^0.0.18"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.13"
