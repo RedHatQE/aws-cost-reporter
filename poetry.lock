@@ -1014,12 +1014,12 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyhelper-utils"
-version = "0.0.18"
+version = "0.0.19"
 description = "Collective utility functions for python projects"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pyhelper_utils-0.0.18.tar.gz", hash = "sha256:33f1ba2559a701aa16c5b6384bb5acbd317b0acd69625fd43c1eb15fbbbc7c63"},
+    {file = "pyhelper_utils-0.0.19.tar.gz", hash = "sha256:2e38e32555118a68823eafcb4201694605d42d11b004a99b30dd5963096fd40a"},
 ]
 
 [package.dependencies]
@@ -1144,12 +1144,12 @@ six = "*"
 
 [[package]]
 name = "python-simple-logger"
-version = "1.0.23"
+version = "1.0.25"
 description = "A simple logger for python"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "python_simple_logger-1.0.23.tar.gz", hash = "sha256:90f7f7be73fdf17e904e5808fbe1e0038ebc0aa272553c0ded79dc65dffd3447"},
+    {file = "python_simple_logger-1.0.25.tar.gz", hash = "sha256:ec1bf55b2c514fee4d73ec9b0d4ec2701e149adb2b49ace91bd4eb6b9bb3318e"},
 ]
 
 [package.dependencies]
@@ -1228,13 +1228,13 @@ files = [
 
 [[package]]
 name = "requests"
-version = "2.32.0"
+version = "2.32.1"
 description = "Python HTTP for Humans."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "requests-2.32.0-py3-none-any.whl", hash = "sha256:f2c3881dddb70d056c5bd7600a4fae312b2a300e39be6a118d30b90bd27262b5"},
-    {file = "requests-2.32.0.tar.gz", hash = "sha256:fa5490319474c82ef1d2c9bc459d3652e3ae4ef4c4ebdd18a21145a47ca4b6b8"},
+    {file = "requests-2.32.1-py3-none-any.whl", hash = "sha256:21ac9465cdf8c1650fe1ecde8a71669a93d4e6f147550483a2967d08396a56a5"},
+    {file = "requests-2.32.1.tar.gz", hash = "sha256:eb97e87e64c79e64e5b8ac75cee9dd1f97f49e289b083ee6be96268930725685"},
 ]
 
 [package.dependencies]
@@ -1444,4 +1444,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "36f1c011c05926182634addf695927224680788448beed3427b20d8b33c1fbd8"
+content-hash = "294e5cded49422289b968852e4f268ba9f4de07044965607ead3fed174de356e"
