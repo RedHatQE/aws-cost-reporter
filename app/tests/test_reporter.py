@@ -25,7 +25,9 @@ def aws_account_names(aws_accounts_file):
 
 @pytest.fixture
 def expected_cost_report_message(aws_static_costs, aws_account_names):
-    this_month_start, this_month_end, last_month_start, last_month_end = get_current_and_previous_months_dates()
+    this_month_start, this_month_end, last_month_start, last_month_end = (
+        get_current_and_previous_months_dates()
+    )
     msg = ""
     for aws_account_name in aws_account_names:
         msg += f"{aws_account_name}:\n"

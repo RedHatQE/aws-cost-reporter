@@ -26,7 +26,9 @@ def get_current_and_previous_months_dates() -> Tuple[str, str, str, str]:
 
     _last_month = _today.month - 1 if _today.month > 1 else 12
     last_month_year = _today.year if _today.month > 1 else _today.year - 1
-    last_month_start = datetime.datetime(last_month_year, _last_month, 1).strftime("%Y-%m-%d")
+    last_month_start = datetime.datetime(last_month_year, _last_month, 1).strftime(
+        "%Y-%m-%d"
+    )
     last_month_end = datetime.datetime(
         last_month_year,
         _last_month,
@@ -43,7 +45,9 @@ def update_cost_reporter() -> str:
     slack_webhook_url: str = config_data.get("slack-webhook-url")
     app_extrenal_url: str = config_data.get("app-external-url")
 
-    this_month_start, this_month_end, last_month_start, last_month_end = get_current_and_previous_months_dates()
+    this_month_start, this_month_end, last_month_start, last_month_end = (
+        get_current_and_previous_months_dates()
+    )
 
     for account, data in config_data["accounts"].items():
         total_cost[account] = {}
@@ -71,10 +75,14 @@ def update_cost_reporter() -> str:
             FLASK_APP.logger.error(f"Failed to get cost for {account}: {exp}")
             continue
 
-        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"]["NetUnblendedCost"]
+        _this_month_total_cost_data = this_month_cost["ResultsByTime"][0]["Total"][
+            "NetUnblendedCost"
+        ]
         _this_month_total_cost = _this_month_total_cost_data["Amount"]
 
-        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"]["NetUnblendedCost"]
+        _last_month_total_cost_data = last_month_cost["ResultsByTime"][0]["Total"][
+            "NetUnblendedCost"
+        ]
         _last_month_total_cost = _last_month_total_cost_data["Amount"]
 
         _total_unit = _this_month_total_cost_data["Unit"]
