@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.13
 
 COPY app/* /aws-cost-reporter/app/
 COPY pyproject.toml poetry.lock /aws-cost-reporter/
