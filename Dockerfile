@@ -1,7 +1,7 @@
 FROM python:3.13
 
 COPY app/* /aws-cost-reporter/app/
-COPY pyproject.toml poetry.lock /aws-cost-reporter/
+COPY pyproject.toml poetry.lock README.md /aws-cost-reporter/
 WORKDIR /aws-cost-reporter
 RUN python3 -m pip install pip --upgrade \
   && python3 -m pip install poetry \
